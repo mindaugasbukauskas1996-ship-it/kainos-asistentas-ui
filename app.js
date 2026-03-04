@@ -67,3 +67,4 @@ btn.addEventListener("click", async () => {
     out.textContent = "Nepavyko susisiekti su API: " + err.message;
   }
 });
+
