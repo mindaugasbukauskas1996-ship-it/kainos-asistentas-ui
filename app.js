@@ -1,3 +1,4 @@
+
 const btn = document.getElementById("btn");
 const out = document.getElementById("out");
 const quick = document.getElementById("quick");
@@ -53,32 +54,18 @@ btn.addEventListener("click", async () => {
     if (data.status === "need_more_info") {
       out.textContent =
         `Reikia patikslinimo (darbas: ${data.work_type_guess}):\n\n` +
-        data.questions.map((q, i) => `${i + 1}. ${q}`).join("\n");
+        (data.questions || []).map((q, i) => `${i + 1}. ${q}`).join("\n");
 
-      // siūlom mygtukus pagal klausimų tekstą
       const qs = (data.questions || []).join(" ").toLowerCase();
-
       const buttons = [];
 
-      // vanduo / nuotekos
-      if (qs.includes("nuotek") || qs.includes("karšto") || qs.includes("šalto") || qs.includes("vamzdis")) {
-        buttons.push(
-          { label: "Nuotekos", appendText: " nuotekų" },
-          { label: "Šaltas vanduo", appendText: " šalto vandens" },
-          { label: "Karštas vanduo", appendText: " karšto vandens" }
-        );
-      }
-
-      // trišakis
       if (qs.includes("trišaki")) {
         buttons.push(
           { label: "Trišakis: taip", appendText: " su trišakiu" },
           { label: "Trišakis: ne", appendText: " be trišakio" }
         );
       }
-
-      // dažniausi kiekio šablonai
-      if (qs.includes("kiek metr") || qs.includes("m)")) {
+      if (qs.includes("metr") || qs.includes("m)")) {
         buttons.push(
           { label: "+ 1 m", appendText: " 1 m" },
           { label: "+ 5 m", appendText: " 5 m" },
@@ -99,15 +86,19 @@ btn.addEventListener("click", async () => {
           { label: "+ 3 aukštai", appendText: " 3 aukštai" }
         );
       }
+      if (qs.includes("vnt")) {
+        buttons.push(
+          { label: "+ 1 vnt", appendText: " 1 vnt" },
+          { label: "+ 2 vnt", appendText: " 2 vnt" },
+          { label: "+ 5 vnt", appendText: " 5 vnt" }
+        );
+      }
 
       if (buttons.length) {
         setQuickButtons(buttons, (append) => {
-          // pridedam į tekstą ir automatiškai perskaičiuojam
           textEl.value = (textEl.value.trim() + " " + append).trim();
           btn.click();
         });
-      } else {
-        clearQuickButtons();
       }
 
       return;
@@ -120,13 +111,21 @@ btn.addEventListener("click", async () => {
 
     clearQuickButtons();
 
-    out.textContent =
+    let s =
       `Atpažintas darbas: ${data.work_type}\n` +
       `Kiekis: ${data.qty} ${data.unit}\n` +
       (data.trisakis_add ? `Trišakis: +${eur(data.trisakis_add)}\n` : "") +
-      `Koeficientas: ${data.coef}\n\n` +
-      `Preliminari kaina (be PVM): ${eur(data.estimate_eur_be_pvm)}\n` +
+      `\nPreliminari kaina (be PVM): ${eur(data.estimate_eur_be_pvm)}\n` +
       `Intervalas (be PVM): ${eur(data.range_eur_be_pvm[0])} – ${eur(data.range_eur_be_pvm[1])}\n`;
+
+    if (data.analogs && data.analogs.length) {
+      s += `\nAnalogai (iš istorijos):\n`;
+      data.analogs.forEach((a, i) => {
+        s += `${i + 1}) ${a.title || ""} | ${a.qty} ${a.unit} | ${eur(a.cost_be_pvm)} | ${a.contractor || ""}\n`;
+      });
+    }
+
+    out.textContent = s;
 
   } catch (err) {
     out.textContent = "Nepavyko susisiekti su serveriu: " + err.message;
