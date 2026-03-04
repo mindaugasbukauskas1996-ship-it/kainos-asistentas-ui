@@ -1,69 +1,71 @@
 const btn = document.getElementById("btn");
 const out = document.getElementById("out");
 
-// tavo Render API (be / gale)
-const API_BASE = "https://kainos-asistentas-api.onrender.com";
+const API = "https://kainos-asistentas-api.onrender.com/estimate";
 
-function fmtEur(x) {
-  if (typeof x !== "number") return x;
-  return new Intl.NumberFormat("lt-LT", { style: "currency", currency: "EUR" }).format(x);
+function eur(x) {
+  return new Intl.NumberFormat("lt-LT", {
+    style: "currency",
+    currency: "EUR"
+  }).format(x);
 }
 
 btn.addEventListener("click", async () => {
-  const text = document.getElementById("text").value.trim();
-  const address = document.getElementById("address").value.trim();
+
+  const text = document.getElementById("text").value;
+  const address = document.getElementById("address").value;
 
   if (!text) {
-    out.textContent = "Įveskite užklausą (aprašymą).";
+    out.textContent = "Įrašykite darbų aprašymą.";
     return;
   }
 
   out.textContent = "Skaičiuoju...";
 
   try {
-    const res = await fetch(`${API_BASE}/estimate`, {
+
+    const r = await fetch(API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, address: address || null })
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        text: text,
+        address: address
+      })
     });
 
-    if (!res.ok) {
-      const t = await res.text();
-      out.textContent = `API klaida (${res.status}):\n` + t;
-      return;
-    }
-
-    const data = await res.json();
+    const data = await r.json();
 
     if (data.status === "need_more_info") {
+
       out.textContent =
-        `Reikia patikslinimų (darbas: ${data.work_type_guess}):\n\n` +
-        data.questions.map((q, i) => `${i + 1}) ${q}`).join("\n");
+        "Reikia patikslinimo:\n\n" +
+        data.questions.map((q, i) => (i + 1) + ". " + q).join("\n");
+
       return;
     }
 
     if (data.status === "no_price_model") {
+
       out.textContent =
-        `Negaliu patikimai įvertinti.\n` +
-        `Atpažintas darbas: ${data.work_type_guess}\n\n` +
-        (data.message || "");
+        "Negaliu apskaičiuoti kainos.\n\n" +
+        data.message;
+
       return;
     }
 
-    // ok
-    const est = data.estimate_eur_be_pvm;
-    const [low, high] = data.range_eur_be_pvm || [];
-
     out.textContent =
-      `Atpažintas darbas: ${data.work_type}\n` +
-      `Kiekis: ${data.qty} ${data.unit}\n` +
-      (data.trisakis_add ? `Trišakis: +${fmtEur(data.trisakis_add)}\n` : "") +
-      `Koeficientas: ${data.coef}\n\n` +
-      `Preliminari kaina (be PVM): ${fmtEur(est)}\n` +
-      `Intervalas (be PVM): ${fmtEur(low)} – ${fmtEur(high)}\n\n` +
-      `Pastabos:\n` +
-      `- vamzdyno tipas: ${data.assumptions?.water_type || "n/a"}\n`;
+      "Atpažintas darbas: " + data.work_type + "\n" +
+      "Kiekis: " + data.qty + " " + data.unit + "\n\n" +
+      "Preliminari kaina: " + eur(data.estimate_eur_be_pvm) + "\n" +
+      "Intervalas: " + eur(data.range_eur_be_pvm[0]) +
+      " – " + eur(data.range_eur_be_pvm[1]);
+
   } catch (err) {
-    out.textContent = "Nepavyko susisiekti su API: " + err.message;
+
+    out.textContent = "Nepavyko susisiekti su serveriu.";
+
   }
+
 });
