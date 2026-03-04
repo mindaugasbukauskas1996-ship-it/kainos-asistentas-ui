@@ -1,7 +1,7 @@
 const btn = document.getElementById("btn");
 const out = document.getElementById("out");
 
-// ĮRAŠYK SAVO RENDER URL (be / gale)
+// tavo Render API (be / gale)
 const API_BASE = "https://kainos-asistentas-api.onrender.com";
 
 function fmtEur(x) {
@@ -62,9 +62,8 @@ btn.addEventListener("click", async () => {
       `Preliminari kaina (be PVM): ${fmtEur(est)}\n` +
       `Intervalas (be PVM): ${fmtEur(low)} – ${fmtEur(high)}\n\n` +
       `Pastabos:\n` +
-      `- vandens tipas: ${data.assumptions?.water_type || "n/a"}\n`;
+      `- vamzdyno tipas: ${data.assumptions?.water_type || "n/a"}\n`;
   } catch (err) {
     out.textContent = "Nepavyko susisiekti su API: " + err.message;
   }
 });
-
